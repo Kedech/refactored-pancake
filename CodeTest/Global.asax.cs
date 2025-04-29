@@ -6,6 +6,7 @@ using System.Web.Routing;
 using LightInject;
 using PruebaIngreso.Controllers;
 using PruebaIngreso.Models;
+using PruebaIngreso.Services;
 using Quote.ServiceDescriptor;
 
 namespace PruebaIngreso
@@ -20,6 +21,7 @@ namespace PruebaIngreso
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             var container = new ServiceContainer();
             container.RegisterControllers();
+            container.Register<IApiService, ApiService>();
             QuoteDefaultServiceDescriptor.Register(container);
             //register other services
 

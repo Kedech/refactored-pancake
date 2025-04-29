@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web.Mvc;
+using PruebaIngreso.Services;
 using Quote.Contracts;
 using Quote.Models;
 
@@ -9,10 +12,12 @@ namespace PruebaIngreso.Controllers
     public class HomeController : Controller
     {
         private readonly IQuoteEngine quote;
+        private readonly IApiService _apiService;
 
-        public HomeController(IQuoteEngine quote)
+        public HomeController(IQuoteEngine quote, IApiService apiService)
         {
             this.quote = quote;
+            this._apiService = apiService;
         }
 
         public ActionResult Index()
@@ -44,14 +49,27 @@ namespace PruebaIngreso.Controllers
             return View(tour);
         }
 
+        [ActionName("prueba2")]
         public ActionResult Test2()
         {
             ViewBag.Message = "Test 2 Correcto";
-            return View();
+            ViewBag.Title = "Test";
+            return View("Test2");
         }
 
-        public ActionResult Test3()
+        public async Task<ActionResult> Test3()
         {
+            try
+            {
+                //Codigos para probar los status: E-U10-UNILATIN 204, E-U10-DSCVCOVE 404 y E-E10-PF2SHOW 500
+                string marginResponse = await _apiService.GetMarginAsync("E-E10-PF2SHOW");
+                ViewBag.Margin = marginResponse;
+            }
+            catch (Exception)
+            {
+                ViewBag.Margin = "{\"margin\": 0.0}";
+            }
+
             return View();
         }
 
@@ -69,11 +87,17 @@ namespace PruebaIngreso.Controllers
                     GetContracts = true,
                     GetCalculatedQuote = true,
                 },
-                Language = Language.Spanish
+                Language = Quote.Models.Language.Spanish
             };
-
+            var apiService = new ApiService();
             var result = this.quote.Quote(request);
-            return View(result.TourQuotes);
+            var marginDecorator = new List<MarginProviderDecorator>();
+            foreach (var quote in result.TourQuotes)
+            {
+                var decorator = new MarginProviderDecorator(quote, apiService);
+                marginDecorator.Add(decorator);
+            }
+            return View(marginDecorator);
         }
     }
 }
